@@ -2,6 +2,10 @@
 "outputDirectory": "dist",
 "rewrites": [
 {
+"source": "/manifest.json",
+"destination": "/manifest.json"
+},
+{
 "source": "(.*)",
 "destination": "/index.html"
 }
