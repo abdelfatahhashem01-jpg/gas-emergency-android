@@ -1,0 +1,8 @@
+{
+  "outputDirectory": "dist",
+  "functions": {
+    "api/[...route].js": {
+      "maxDuration": 30
+    }
+  }
+}

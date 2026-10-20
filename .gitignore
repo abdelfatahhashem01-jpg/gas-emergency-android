@@ -1,0 +1,13 @@
+node_modules/
+dist/
+android/.gradle/
+android/build/
+android/app/build/
+android/local.properties
+.env
+.env.*
+!.env.example
+.npm-cache/
+.tools/
+.gradle-user/
+.android-user/
