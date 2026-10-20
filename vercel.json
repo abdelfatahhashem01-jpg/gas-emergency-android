@@ -1,7 +1,13 @@
 {
+  "outputDirectory": "dist",
+  "functions": {
+    "api/[...route].js": {
+      "maxDuration": 30
+    }
+  },
   "rewrites": [
     {
-      "source": "/(.*)",
+      "source": "/((?!api/).*)",
       "destination": "/index.html"
     }
   ]
