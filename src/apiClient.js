@@ -1,33 +1,54 @@
+const API_BASE = String(import.meta.env.VITE_API_BASE_URL || "").replace(/\/$/, "");
 
-{
-  "name": "gas-emergency-android",
-  "private": true,
-  "version": "0.1.0",
-  "type": "module",
-  "scripts": {
-    "dev": "vite",
-    "api:dev": "node server.js",
-    "build": "vite build",
-    "preview": "vite preview",
-    "db:migrate": "node scripts/migrate.mjs",
-    "android:add": "cap add android",
-    "android:sync": "npm run build && cap sync android",
-    "android:open": "cap open android"
-  },
-  "dependencies": {
-    "@capacitor/android": "^8.0.0",
-    "@capacitor/app": "^8.0.0",
-    "@capacitor/core": "^8.0.0",
-    "leaflet": "^1.9.4",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1",
-    "recharts": "^2.13.3",
-    "xlsx": "^0.18.5",
-    "@libsql/client": "^0.15.15"
-  },
-  "devDependencies": {
-    "@capacitor/cli": "^8.0.0",
-    "@vitejs/plugin-react": "^4.3.4",
-    "vite": "^5.4.11"
-  }
+function csrfCookie() {
+  const item = document.cookie
+    .split(";")
+    .map((part) => part.trim())
+    .find((part) => part.startsWith("gas_csrf="));
+  return item ? decodeURIComponent(item.slice("gas_csrf=".length)) : "";
 }
+
+export async function apiRequest(path, { method = "GET", body, headers = {} } = {}) {
+  const requestHeaders = { Accept: "application/json", ...headers };
+  if (body !== undefined) requestHeaders["Content-Type"] = "application/json";
+
+  if (!["GET", "HEAD", "OPTIONS"].includes(method.toUpperCase())) {
+    const csrf = csrfCookie();
+    if (csrf) requestHeaders["X-CSRF-Token"] = csrf;
+  }
+
+  const response = await fetch(`${API_BASE}/api${path}`, {
+    method,
+    credentials: "include",
+    cache: "no-store",
+    headers: requestHeaders,
+    ...(body === undefined ? {} : { body: JSON.stringify(body) }),
+  });
+
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    const error = new Error(payload.error || `تعذر الاتصال بالخادم (${response.status})`);
+    error.status = response.status;
+    throw error;
+  }
+  return payload;
+}
+
+export const authApi = {
+  status: () => apiRequest("/auth/status"),
+  setup: (body, setupToken) => apiRequest("/auth/setup", {
+    method: "POST",
+    body,
+    headers: { "X-Initial-Setup-Token": setupToken },
+  }),
+  login: (loginId, password) => apiRequest("/auth/login", {
+    method: "POST",
+    body: { loginId, password },
+  }),
+  me: () => apiRequest("/auth/me"),
+  logout: () => apiRequest("/auth/logout", { method: "POST", body: {} }),
+  changePassword: (currentPassword, newPassword) => apiRequest("/auth/password", {
+    method: "POST",
+    body: { currentPassword, newPassword },
+  }),
+};
